@@ -1,0 +1,195 @@
+{
+"AWSTemplateFormatVersion": "2010-09-09",
+"Description": "Aurora Db Stack",
+"Parameters": {
+    "EnvironmentName": {
+        "Description": "The string that will be prefixed to each instance name",
+        "Type": "String",
+        "MinLength": "3",
+        "MaxLength": "6",
+        "AllowedPattern": "[a-z0-9]*",
+        "ConstraintDescription": "Environment names must be 3-6 characters and contain only a-z and 0-9."
+    },
+    "DbUsername": {
+        "Description": "App Db Username",
+        "Type": "String",
+        "MinLength": "5",
+        "MaxLength": "15",
+        "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+        "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+	"DBAllocatedStorage" : 
+	{
+	"Description": "DB storage size in GB",
+    "Type": "String",
+	"Default": "10"
+	},
+    "DbPassword": {
+        "Description": "App Db Password",
+        "NoEcho": "true",
+        "Type": "String",
+        "MinLength": "5",
+        "MaxLength": "41",
+        "AllowedPattern": "[a-zA-Z0-9]*",
+        "ConstraintDescription": "App Db Password must be 5-41 characters and contain only alpha numeric characters."
+    },
+    "DbType": {
+        "Description": "App Db server RDS instance type",
+        "Type": "String",
+        "Default": "db.t2.medium",
+        "AllowedValues": [
+            "db.t2.medium",
+            "db.r3.xlarge",
+            "db.r3.2xlarge",
+            "db.r3.4xlarge",
+            "db.r3.8xlarge"
+        ],
+        "ConstraintDescription": "must be a valid RDS instance type."
+    },
+    "DBIdentifierNameMaster": {
+        "Description": "The string that will be prefixed to each instance name",
+        "Type": "String",
+        "MinLength": "3",
+        "MaxLength": "10",
+        "AllowedPattern": "[a-z0-9]*",
+        "ConstraintDescription": "Identifier names must be 3-6 characters and contain only a-z and 0-9."
+    },
+    "Subnets": {
+        "Type": "CommaDelimitedList",
+        "Default": "subnet-ebd47982,subnet-2036d46d",
+        "Description": "The list of SubnetIds where the stack will be launched"
+    },
+    "DBSecurityGroupID": {
+        "Type": "String",
+        "Description": "Security Group id"
+    }
+},
+"Resources": {
+    "DBSubnetGroup": {
+        "Type": "AWS::RDS::DBSubnetGroup",
+        "Properties": {
+            "DBSubnetGroupDescription": "DB subent groups",
+            "SubnetIds": 
+                {
+                    "Ref": "Subnets"
+                },
+
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "PROJECT_NAME-",
+                                {
+                                    "Ref": "EnvironmentName"
+                                },
+                                "-db"
+                            ]
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+	
+	"DBCluster": {
+        "Type": "AWS::RDS::DBCluster",
+        "Properties": {
+            "Engine": "aurora",
+            "MasterUsername": {
+                "Ref": "DbUsername"
+            },
+            "MasterUserPassword": {
+                "Ref": "DbPassword"
+            },
+			"DBClusterParameterGroupName" : { "Ref" : "RDSDBClusterParameterGroup" },
+            "DBSubnetGroupName": {
+                "Ref": "DBSubnetGroup"
+            },
+            "VpcSecurityGroupIds": [
+                {
+                    "Ref": "DBSecurityGroupID"
+                }
+            ]
+        }
+    },
+    
+    "RDSinstance": {
+        "Type": "AWS::RDS::DBInstance",
+        "Properties": {
+		    
+			"DBClusterIdentifier" : {
+			  "Ref" : "DBCluster"
+			},
+            "DBSubnetGroupName": {
+                "Ref": "DBSubnetGroup"
+            },
+			
+            "DBInstanceIdentifier": {
+                "Ref": "DBIdentifierNameMaster"
+            },
+            "DBInstanceClass": {
+                "Ref": "DbType"
+            },
+            "Engine": "aurora",
+            "DBParameterGroupName": {
+                "Ref": "RDSDBParameterGroup"
+            },
+            "DBSubnetGroupName": {
+                "Ref": "DBSubnetGroup"
+            },
+            "PubliclyAccessible": "false",
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "Master Database-",
+                                {
+                                    "Ref": "EnvironmentName"
+                                },
+                                "-app-db"
+                            ]
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    
+    "RDSDBParameterGroup": {
+        "Type": "AWS::RDS::DBParameterGroup",
+        "Properties": {
+            "Description": "DbParameters",
+            "Family": "aurora5.6",
+            "Parameters": {
+                "log_bin_trust_function_creators": "on",
+                "explicit_defaults_for_timestamp": "0",
+				"sql_mode": "IGNORE_SPACE"
+            }
+        }
+    },
+	"RDSDBClusterParameterGroup" : {
+	  "Type": "AWS::RDS::DBClusterParameterGroup",
+	  "Properties" : {
+		"Description" : "CloudFormation Sample Aurora Cluster Parameter Group",
+		"Family" : "aurora5.6",
+		"Parameters" : {
+		  "time_zone" : "US/Eastern"
+		}
+	  }
+	}
+	},
+	
+	"Outputs" : {
+		"AuroraDBEndpoint" : {
+		  "Description" : "The Endpoint for the newly created AuroraDB",
+		  "Value" : {  "Fn::GetAtt" : [ "RDSinstance", "Endpoint.Address" ]}
+		}
+  }
+
+}
