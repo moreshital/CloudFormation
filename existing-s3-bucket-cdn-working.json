@@ -1,0 +1,86 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+
+    "Description" : "AWS CloudFormation Template S3_With_CloudFront_Distribution",
+
+    "Parameters" : {
+        "AmazonS3BucketName" : {
+          "Type" : "String",
+          "Description" : "Give the name of Bucket (Existing/To be created)"          
+        }
+    },
+
+    
+
+    "Resources" : {
+
+    "S3BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": { "Ref": "AmazonS3BucketName" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Sid" : "Grant a CloudFront Origin Identity access to support private content",
+            "Action": ["s3:GetObject"],
+            "Effect": "Allow",
+            "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "AmazonS3BucketName" }, "/*"]]},
+            "Principal": "*"
+          }]
+        }
+      }
+    },
+
+
+        "testdistribution" : {
+            "Type" : "AWS::CloudFront::Distribution",
+            "Properties" : {
+               "DistributionConfig" : {
+                   "Enabled" : "true",
+                   "Comment" : "",
+                   "Origins" : [ {
+                                  "DomainName" :{"Fn::Join": ["",[ {"Ref": "AmazonS3BucketName"},".s3.amazonaws.com"]]},
+                                   "Id" : "S3Origin",
+                                  "S3OriginConfig" : { "OriginAccessIdentity" : "origin-access-identity/cloudfront/E3L9H3CPN4XLFY" }
+                                  }
+                                ],
+
+                   
+                   
+
+                   "CacheBehaviors" : [ {
+                            "TargetOriginId" : "S3Origin",
+			    "PathPattern" : "*",
+                            "ForwardedValues" : { "QueryString" : "false"},                            
+                            "ViewerProtocolPolicy" : "allow-all"
+
+                            
+                        }
+                   ],
+                   "DefaultCacheBehavior" : {
+                       "TargetOriginId" : "S3Origin",
+                       "ForwardedValues" : { "QueryString" : "false" },                       
+                       "ViewerProtocolPolicy" : "allow-all",
+                       "TrustedSigners": ["self"]
+                  },
+                   "DefaultRootObject": "index.html"
+                }
+            }
+        }
+    },
+    "Outputs" : {
+        "DistributionId" : {
+            "Description" : "CloudFront Distribution Id",
+            "Value" : { "Ref" : "testdistribution" }
+        },
+        "DistributionName" : {
+             "Description" : "URL to access the CloudFront distribution",
+             "Value" : { "Fn::Join" : [ "", ["http://", {"Fn::GetAtt" : ["testdistribution", "DomainName"]} ]]}
+        },
+        "S3OriginDNSName" : {
+             "Description" : "Name of S3 bucket to hold website content.",
+             "Value" : { "Ref": "AmazonS3BucketName" }
+        }
+  }
+}  
+

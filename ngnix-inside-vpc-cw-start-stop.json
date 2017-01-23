@@ -79,15 +79,13 @@
 
   "TimeToStartInstance": {
       "Description" : "Specify the time when you want to schedule Instance start Up",
-      "Type" : "Number",
-      "Default" : "0 3 * * *",
-      "ConstraintDescription" : "must be in a crontab format (Minute Hour Day-of-Month Month Day-of-Week )."
+      "Type" : "String",
+      "Default" : "0 3 * * *"
     },
     "TimeToStopInstance": {
       "Description" : "Specify the time when you want to schedule Instance Shut Down",
-      "Type" : "Number",
-      "Default" : "30 3 * * *",
-      "ConstraintDescription" : "must be in a crontab format (Minute Hour Day-of-Month Month Day-of-Week )."
+      "Type" : "String",
+      "Default" : "30 3 * * *"
     },
    
       "EmailIdForSNSTopic": {
@@ -314,7 +312,7 @@
             "packages" : {
               "yum" : {
                                 "nginx" : [],
-				"php54" : [],
+				"php70" : [],
 				"mysql" : [],
                                 "mysql-server": []
               }

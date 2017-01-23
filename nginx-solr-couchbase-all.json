@@ -697,7 +697,7 @@
             "packages" : {
               "yum" : {
                                 "nginx" : [],
-				"php54" : [],
+				"php70" : [],
 				"mysql" : [],
                                 "mysql-server": []
               }
